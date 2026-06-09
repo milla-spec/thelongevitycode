@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Longevity Code — Nescens</title>
+  <style>
+    @font-face {
+      font-family: 'SangBleuOGSans';
+      src: url('fonts/SangBleuOGSans-Light.woff2') format('woff2'),
+           url('fonts/SangBleuOGSans-Light.woff') format('woff');
+      font-weight: 300;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'NoirPro';
+      src: url('fonts/NoirPro-Light.woff2') format('woff2'),
+           url('fonts/NoirPro-Light.woff') format('woff');
+      font-weight: 300;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'NoirPro';
+      src: url('fonts/NoirPro.woff2') format('woff2'),
+           url('fonts/NoirPro.woff') format('woff');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'NoirPro';
+      src: url('fonts/NoirPro-Medium.woff2') format('woff2'),
+           url('fonts/NoirPro-Medium.woff') format('woff');
+      font-weight: 500;
+      font-style: normal;
+    }
+  </style>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #1B2F6E;
+      --navy-light: #2a4090;
+      --white: #ffffff;
+      --correct: #2E7D52;
+      --wrong: #C0392B;
+      --correct-bg: #eaf4ee;
+      --wrong-bg: #fdecea;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--white);
+      font-family: 'NoirPro', sans-serif;
+      color: var(--navy);
+      overflow: hidden;
+    }
+
+    /* ── SCREEN WRAPPER ── */
+    #app {
+      width: 100vw; height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 90px 60px 40px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(60px);
+      transition: opacity 0.55s cubic-bezier(.4,0,.2,1),
+                  transform 0.55s cubic-bezier(.4,0,.2,1);
+    }
+
+    .screen.active {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateX(0);
+    }
+
+    .screen.exit-left {
+      opacity: 0;
+      transform: translateX(-60px);
+      pointer-events: none;
+    }
+
+    /* ── LOGO ── */
+    .logo {
+      position: absolute;
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .logo svg {
+      height: 28px;
+      width: auto;
+      display: block;
+    }
+
+    /* ── INTRO SCREEN ── */
+    #screen-intro .title {
+      font-family: 'SangBleuOGSans', sans-serif;
+      font-weight: 300;
+      font-size: clamp(72px, 10vw, 130px);
+      line-height: 0.92;
+      text-align: center;
+      color: var(--navy);
+      letter-spacing: -0.01em;
+      margin-bottom: 52px;
+      animation: fadeInUp 1s cubic-bezier(.4,0,.2,1) both;
+    }
+
+    #screen-intro .subtitle {
+      font-family: 'NoirPro', sans-serif;
+      font-size: clamp(13px, 1.4vw, 17px);
+      font-weight: 400;
+      text-align: center;
+      color: var(--navy);
+      line-height: 1.7;
+      max-width: 620px;
+      animation: fadeInUp 1s 0.25s cubic-bezier(.4,0,.2,1) both;
+    }
+
+    #screen-intro .start-btn {
+      margin-top: 56px;
+      padding: 16px 52px;
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      font-family: 'NoirPro', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background 0.25s, transform 0.2s;
+      animation: fadeInUp 1s 0.45s cubic-bezier(.4,0,.2,1) both;
+    }
+    #screen-intro .start-btn:hover { background: var(--navy-light); transform: translateY(-2px); }
+
+    /* ── QUESTION SCREEN ── */
+    .screen-question .q-number {
+      font-family: 'SangBleuOGSans', sans-serif;
+      font-size: clamp(11px, 1.1vw, 14px);
+      font-weight: 400;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--navy);
+      opacity: 0.55;
+      margin-bottom: 28px;
+      align-self: flex-start;
+    }
+
+    .screen-question .q-text {
+      font-family: 'SangBleuOGSans', sans-serif;
+      font-weight: 300;
+      font-size: clamp(26px, 3.6vw, 50px);
+      line-height: 1.08;
+      text-align: center;
+      color: var(--navy);
+      max-width: 960px;
+      margin-bottom: 36px;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 780px;
+    }
+
+    .option-btn {
+      background: none;
+      border: 1.5px solid transparent;
+      color: var(--navy);
+      font-family: 'NoirPro', sans-serif;
+      font-size: clamp(13px, 1.3vw, 16px);
+      font-weight: 500;
+      padding: 15px 32px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s, transform 0.18s, opacity 0.3s;
+      line-height: 1.4;
+      border-bottom: 1.5px solid rgba(27,47,110,0.2);
+    }
+
+    .option-btn:not([disabled]):hover {
+      border-bottom-color: var(--navy);
+      transform: translateY(-1px);
+    }
+
+    .option-btn.selected-correct {
+      background: var(--correct-bg);
+      border-bottom-color: var(--correct);
+      color: var(--correct);
+    }
+
+    .option-btn.selected-wrong {
+      background: var(--wrong-bg);
+      border-bottom-color: var(--wrong);
+      color: var(--wrong);
+    }
+
+    .option-btn.reveal-correct {
+      background: var(--correct-bg);
+      border-bottom-color: var(--correct);
+      color: var(--correct);
+    }
+
+    .option-btn.faded {
+      opacity: 0.35;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: rgba(27,47,110,0.12);
+      width: 100%;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--navy);
+      transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* Next button */
+    .next-btn {
+      margin-top: 44px;
+      padding: 14px 44px;
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      font-family: 'NoirPro', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s 0.2s, transform 0.4s 0.2s, background 0.2s;
+      pointer-events: none;
+    }
+    .next-btn.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+    .next-btn:hover { background: var(--navy-light); }
+
+    /* feedback pill */
+    .feedback {
+      margin-top: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.35s, transform 0.35s;
+      height: 20px;
+    }
+    .feedback.show { opacity: 1; transform: translateY(0); }
+    .feedback.correct { color: var(--correct); }
+    .feedback.wrong { color: var(--wrong); }
+
+    /* ── RESULT SCREEN ── */
+    #screen-result .result-title {
+      font-family: 'SangBleuOGSans', sans-serif;
+      font-weight: 300;
+      font-size: clamp(48px, 7vw, 96px);
+      line-height: 0.95;
+      text-align: center;
+      color: var(--navy);
+      margin-bottom: 36px;
+    }
+
+    #screen-result .result-score {
+      font-family: 'SangBleuOGSans', sans-serif;
+      font-size: clamp(18px, 2.5vw, 30px);
+      font-weight: 400;
+      color: var(--navy);
+      opacity: 0.7;
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    #screen-result .result-msg {
+      font-family: 'NoirPro', sans-serif;
+      font-size: clamp(13px, 1.4vw, 17px);
+      font-weight: 600;
+      text-align: center;
+      color: var(--navy);
+      max-width: 580px;
+      line-height: 1.75;
+    }
+
+    #screen-result .restart-btn {
+      margin-top: 52px;
+      padding: 16px 52px;
+      background: none;
+      border: 1.5px solid var(--navy);
+      color: var(--navy);
+      font-family: 'NoirPro', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.25s, color 0.25s, transform 0.2s;
+    }
+    #screen-result .restart-btn:hover {
+      background: var(--navy);
+      color: var(--white);
+      transform: translateY(-2px);
+    }
+
+    /* Score stars */
+    .stars {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .star {
+      width: 36px; height: 36px;
+      opacity: 0;
+      transform: scale(0.4) rotate(-20deg);
+      transition: opacity 0.4s, transform 0.4s;
+      fill: var(--navy);
+    }
+    .star.lit {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .option-btn {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    .screen-question.active .option-btn {
+      animation: fadeInUp 0.5s cubic-bezier(.4,0,.2,1) both;
+    }
+    .screen-question.active .option-btn:nth-child(1) { animation-delay: 0.35s; }
+    .screen-question.active .option-btn:nth-child(2) { animation-delay: 0.48s; }
+    .screen-question.active .option-btn:nth-child(3) { animation-delay: 0.61s; }
+
+    .screen-question.active .q-text {
+      animation: fadeInUp 0.6s 0.1s cubic-bezier(.4,0,.2,1) both;
+    }
+
+    /* shake */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-7px); }
+      40% { transform: translateX(7px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    /* pulse correct */
+    @keyframes pulse-correct {
+      0% { box-shadow: 0 0 0 0 rgba(46,125,82,0.35); }
+      70% { box-shadow: 0 0 0 14px rgba(46,125,82,0); }
+      100% { box-shadow: 0 0 0 0 rgba(46,125,82,0); }
+    }
+    .pulse-correct { animation: pulse-correct 0.6s ease; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── INTRO ── -->
+  <div class="screen active" id="screen-intro">
+    <div class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 586.92 97.89" aria-label="Nescens Switzerland"><g fill="#1B2F6E"><polygon points="152.42 54.54 152.42 46.89 104.03 46.89 104.03 31.42 149.08 31.42 149.08 23.91 96.52 23.91 96.52 54.54 152.42 54.54"/><rect x="96.52" y=".86" width="55.91" height="7.66"/><polygon points="344.02 54.54 344.02 54.54 399.93 54.54 399.93 46.89 351.53 46.89 351.53 31.42 396.58 31.42 396.58 23.91 344.02 23.91 344.02 23.91 344.02 54.54"/><rect x="344.02" y=".86" width="55.91" height="7.66"/><path d="M258.83,27.7c0,14.08,9.99,26.85,36.21,26.84h24.36s0-7.59,0-7.59l-21.33-.06c-19.3,0-29.91-7.29-29.91-19.19s10.68-19.15,29.91-19.15l21.33-.06V.86h-24.53c-25.28,0-36.03,12.08-36.03,26.84Z"/><rect y=".86" width="9.44" height="53.69"/><rect x="61.05" y=".86" width="9.44" height="53.69"/><polygon points="9.44 .86 50.55 54.54 61.05 54.54 19.83 .86 9.44 .86"/><rect x="425.95" y=".86" width="9.44" height="53.69"/><rect x="487" y=".86" width="9.44" height="53.69"/><polygon points="435.39 .86 476.5 54.54 487 54.54 445.79 .86 435.39 .86"/><path d="M180.97,14.48c0-5.97,9.27-7.25,23.45-7.25,8.95,0,20.38,1.13,29.47,4.23l.41-.15V3.37c-8.67-2.87-19.48-3.37-29.6-3.37-20.79,0-31.41,3.44-31.41,14.02,0,7.58,5.95,13.17,23.96,14.92,14.29,1.39,33.33,2.97,33.33,10.26,0,5.74-7.85,8.84-24.3,8.84-12.39,0-23.75-1.89-32.84-5.59l-.41.23v8.54c8.19,2.95,20.59,4.11,32.84,4.11,23.34,0,33.53-4.79,33.53-16.58,0-14.71-21-14.58-37.76-16.65-11.16-1.38-20.67-1.91-20.67-7.61Z"/><path d="M528.49,14.48c0-5.97,9.27-7.25,23.45-7.25,8.95,0,20.38,1.13,29.47,4.23l.41-.15V3.37c-8.67-2.87-19.48-3.37-29.6-3.37-20.79,0-31.41,3.44-31.41,14.02,0,7.58,5.95,13.17,23.96,14.92,14.29,1.39,33.33,2.97,33.33,10.26,0,5.74-7.85,8.84-24.3,8.84-12.39,0-23.75-1.89-32.84-5.59l-.41.23v8.54c8.19,2.95,20.59,4.11,32.84,4.11,23.34,0,33.53-4.79,33.53-16.58,0-14.71-21-14.58-37.76-16.65-11.16-1.38-20.67-1.91-20.67-7.61Z"/><path d="M172.52,85.92h0c-2.13-1.27-4.15-1.27-6.28-1.27h-3.03c-2.18,0-3.2-.67-3.2-2.11,0-2.4,3.76-3.04,5.75-3.04,2.48,0,3.95.65,6.3,2.1l.2.12,1.93-2.76-.19-.14c-2.46-1.86-5.44-2.84-8.63-2.84-1.25,0-2.46.18-3.6.53-2.54.83-5.26,2.86-5.26,6.06,0,3.96,3.4,5.42,6.31,5.47l3.06.06c2.96.05,3.94.1,4.96.75.83.54,1.25,1.25,1.25,2.12,0,2.7-3.82,3.42-6.08,3.42-3.66,0-5.92-.84-8.37-3.11l-.17-.16-2.42,2.33.17.18c2.93,2.98,6.03,4.26,10.38,4.26,4.57,0,9.9-1.75,9.9-6.67,0-2.23-1.09-4.16-2.99-5.3Z"/><polygon points="200.05 91.02 195.94 76.53 192.67 76.53 188.66 91.02 184.25 76.53 180.68 76.53 186.92 97.42 190.52 97.42 194.36 83.63 198.33 97.42 201.76 97.42 208 76.53 204.38 76.53 200.05 91.02"/><rect x="215.58" y="76.53" width="3.42" height="20.89"/><polygon points="227.5 80 234.78 80 234.78 97.42 238.17 97.42 238.17 80 245.36 80 245.36 76.53 227.5 76.53 227.5 80"/><polygon points="269.09 78.83 267.88 76.53 251.93 76.53 251.93 80.02 263.52 80.02 250.84 94.97 250.73 95.09 251.82 97.42 269.21 97.42 269.21 93.9 256.26 93.9 269.09 78.83"/><polygon points="280.59 88.31 287.53 88.31 287.53 84.87 280.59 84.87 280.59 80.02 294.4 80.02 294.4 76.53 277.12 76.53 277.12 97.42 294.92 97.42 294.92 93.95 280.59 93.95 280.59 88.31"/><path d="M322.87,82.79c0-3.8-2.62-6.26-6.67-6.26h-12.33v20.89h3.47v-8.45h7.21l4.1,8.45h3.91l-4.28-8.64c2.97-.82,4.6-2.94,4.6-5.99ZM319.43,82.62c0,2.5-2.02,2.87-3.23,2.87h-8.86v-5.53h8.86c1.47,0,3.23.46,3.23,2.66Z"/><polygon points="335.45 76.53 331.98 76.53 331.98 97.42 347.87 97.42 347.87 93.95 335.45 93.95 335.45 76.53"/><path d="M364.96,76.55h-3.6l-9.5,20.87h3.77l3.03-6.65h8.85l2.93,6.65h3.87l-9.29-20.72-.06-.14ZM365.95,87.28h-5.7l2.85-6.28,2.85,6.28Z"/><polygon points="397.18 91.66 385.34 76.62 385.26 76.53 382 76.53 382 97.42 385.42 97.42 385.42 82.34 397.29 97.33 397.36 97.42 400.68 97.42 400.68 76.53 397.18 76.53 397.18 91.66"/><path d="M421.99,76.53h-10.09v20.89h10.17c2.91,0,4.85-.81,6.69-2.79,1.94-2.06,3.1-4.95,3.1-7.74,0-5.81-4.34-10.36-9.87-10.36ZM428.36,87.11c0,3.9-2.71,6.84-6.29,6.84h-6.76v-13.95h6.7c4.36,0,6.35,3.69,6.35,7.11Z"/></g></svg></div>
+    <h1 class="title">THE<br>LONGEVITY<br>CODE</h1>
+    <p class="subtitle">Répondez correctement pour tenter de remporter notre nouveau<br>Skin Energy Serum en édition limitée.</p>
+    <button class="start-btn" onclick="startQuiz()">Commencer</button>
+  </div>
+
+  <!-- ── QUESTIONS (generated by JS) ── -->
+
+  <!-- ── RESULT ── -->
+  <div class="screen" id="screen-result">
+    <div class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 586.92 97.89" aria-label="Nescens Switzerland"><g fill="#1B2F6E"><polygon points="152.42 54.54 152.42 46.89 104.03 46.89 104.03 31.42 149.08 31.42 149.08 23.91 96.52 23.91 96.52 54.54 152.42 54.54"/><rect x="96.52" y=".86" width="55.91" height="7.66"/><polygon points="344.02 54.54 344.02 54.54 399.93 54.54 399.93 46.89 351.53 46.89 351.53 31.42 396.58 31.42 396.58 23.91 344.02 23.91 344.02 23.91 344.02 54.54"/><rect x="344.02" y=".86" width="55.91" height="7.66"/><path d="M258.83,27.7c0,14.08,9.99,26.85,36.21,26.84h24.36s0-7.59,0-7.59l-21.33-.06c-19.3,0-29.91-7.29-29.91-19.19s10.68-19.15,29.91-19.15l21.33-.06V.86h-24.53c-25.28,0-36.03,12.08-36.03,26.84Z"/><rect y=".86" width="9.44" height="53.69"/><rect x="61.05" y=".86" width="9.44" height="53.69"/><polygon points="9.44 .86 50.55 54.54 61.05 54.54 19.83 .86 9.44 .86"/><rect x="425.95" y=".86" width="9.44" height="53.69"/><rect x="487" y=".86" width="9.44" height="53.69"/><polygon points="435.39 .86 476.5 54.54 487 54.54 445.79 .86 435.39 .86"/><path d="M180.97,14.48c0-5.97,9.27-7.25,23.45-7.25,8.95,0,20.38,1.13,29.47,4.23l.41-.15V3.37c-8.67-2.87-19.48-3.37-29.6-3.37-20.79,0-31.41,3.44-31.41,14.02,0,7.58,5.95,13.17,23.96,14.92,14.29,1.39,33.33,2.97,33.33,10.26,0,5.74-7.85,8.84-24.3,8.84-12.39,0-23.75-1.89-32.84-5.59l-.41.23v8.54c8.19,2.95,20.59,4.11,32.84,4.11,23.34,0,33.53-4.79,33.53-16.58,0-14.71-21-14.58-37.76-16.65-11.16-1.38-20.67-1.91-20.67-7.61Z"/><path d="M528.49,14.48c0-5.97,9.27-7.25,23.45-7.25,8.95,0,20.38,1.13,29.47,4.23l.41-.15V3.37c-8.67-2.87-19.48-3.37-29.6-3.37-20.79,0-31.41,3.44-31.41,14.02,0,7.58,5.95,13.17,23.96,14.92,14.29,1.39,33.33,2.97,33.33,10.26,0,5.74-7.85,8.84-24.3,8.84-12.39,0-23.75-1.89-32.84-5.59l-.41.23v8.54c8.19,2.95,20.59,4.11,32.84,4.11,23.34,0,33.53-4.79,33.53-16.58,0-14.71-21-14.58-37.76-16.65-11.16-1.38-20.67-1.91-20.67-7.61Z"/><path d="M172.52,85.92h0c-2.13-1.27-4.15-1.27-6.28-1.27h-3.03c-2.18,0-3.2-.67-3.2-2.11,0-2.4,3.76-3.04,5.75-3.04,2.48,0,3.95.65,6.3,2.1l.2.12,1.93-2.76-.19-.14c-2.46-1.86-5.44-2.84-8.63-2.84-1.25,0-2.46.18-3.6.53-2.54.83-5.26,2.86-5.26,6.06,0,3.96,3.4,5.42,6.31,5.47l3.06.06c2.96.05,3.94.1,4.96.75.83.54,1.25,1.25,1.25,2.12,0,2.7-3.82,3.42-6.08,3.42-3.66,0-5.92-.84-8.37-3.11l-.17-.16-2.42,2.33.17.18c2.93,2.98,6.03,4.26,10.38,4.26,4.57,0,9.9-1.75,9.9-6.67,0-2.23-1.09-4.16-2.99-5.3Z"/><polygon points="200.05 91.02 195.94 76.53 192.67 76.53 188.66 91.02 184.25 76.53 180.68 76.53 186.92 97.42 190.52 97.42 194.36 83.63 198.33 97.42 201.76 97.42 208 76.53 204.38 76.53 200.05 91.02"/><rect x="215.58" y="76.53" width="3.42" height="20.89"/><polygon points="227.5 80 234.78 80 234.78 97.42 238.17 97.42 238.17 80 245.36 80 245.36 76.53 227.5 76.53 227.5 80"/><polygon points="269.09 78.83 267.88 76.53 251.93 76.53 251.93 80.02 263.52 80.02 250.84 94.97 250.73 95.09 251.82 97.42 269.21 97.42 269.21 93.9 256.26 93.9 269.09 78.83"/><polygon points="280.59 88.31 287.53 88.31 287.53 84.87 280.59 84.87 280.59 80.02 294.4 80.02 294.4 76.53 277.12 76.53 277.12 97.42 294.92 97.42 294.92 93.95 280.59 93.95 280.59 88.31"/><path d="M322.87,82.79c0-3.8-2.62-6.26-6.67-6.26h-12.33v20.89h3.47v-8.45h7.21l4.1,8.45h3.91l-4.28-8.64c2.97-.82,4.6-2.94,4.6-5.99ZM319.43,82.62c0,2.5-2.02,2.87-3.23,2.87h-8.86v-5.53h8.86c1.47,0,3.23.46,3.23,2.66Z"/><polygon points="335.45 76.53 331.98 76.53 331.98 97.42 347.87 97.42 347.87 93.95 335.45 93.95 335.45 76.53"/><path d="M364.96,76.55h-3.6l-9.5,20.87h3.77l3.03-6.65h8.85l2.93,6.65h3.87l-9.29-20.72-.06-.14ZM365.95,87.28h-5.7l2.85-6.28,2.85,6.28Z"/><polygon points="397.18 91.66 385.34 76.62 385.26 76.53 382 76.53 382 97.42 385.42 97.42 385.42 82.34 397.29 97.33 397.36 97.42 400.68 97.42 400.68 76.53 397.18 76.53 397.18 91.66"/><path d="M421.99,76.53h-10.09v20.89h10.17c2.91,0,4.85-.81,6.69-2.79,1.94-2.06,3.1-4.95,3.1-7.74,0-5.81-4.34-10.36-9.87-10.36ZM428.36,87.11c0,3.9-2.71,6.84-6.29,6.84h-6.76v-13.95h6.7c4.36,0,6.35,3.69,6.35,7.11Z"/></g></svg></div>
+    <h2 class="result-title" id="result-title"></h2>
+    <div class="stars" id="stars-container"></div>
+    <p class="result-score" id="result-score"></p>
+    <p class="result-msg" id="result-msg"></p>
+    <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    text: "1. LA PHOTOBIOMODULATION\nAGIT PRINCIPALEMENT EN :",
+    options: [
+      "A. Activant la thermorégulation cutanée",
+      "B. Stimulant les mécanismes d'énergie cellulaire",
+      "C. Renforçant l'hydratation de surface"
+    ],
+    correct: 1   // index B
+  },
+  {
+    text: "2. DANS UN ENVIRONNEMENT\nINSPIRÉ DE L'HYPERBARE,\nL'OXYGÈNE :",
+    options: [
+      "A. Circule plus efficacement dans les tissus",
+      "B. Est consommé plus rapidement par l'organisme",
+      "C. Remplace temporairement le dioxyde de carbone"
+    ],
+    correct: 0   // index A
+  },
+  {
+    text: "3. LA LUMIÈRE ROUGE\nET INFRAROUGE INTERAGIT\nPRINCIPALEMENT AVEC :",
+    options: [
+      "A. Les pigments de la peau",
+      "B. Les structures cellulaires impliquées dans la production d'énergie",
+      "C. Le microbiome cutané"
+    ],
+    correct: 1   // index B
+  },
+  {
+    text: "4. LA SCIENCE DE LA LONGÉVITÉ\nVISE AVANT TOUT À :",
+    options: [
+      "A. Corriger instantanément les signes de l'âge",
+      "B. Soutenir les mécanismes naturels de réparation et de régénération",
+      "C. Restaurer artificiellement les volumes cutanés"
+    ],
+    correct: 1   // index B
+  },
+  {
+    text: "5. NESCENS SWITZERLAND\nEXPLORE :",
+    options: [
+      "A. La cosmétique traditionnelle",
+      "B. La longévité cutanée",
+      "C. Les soins, la longévité et les expériences immersives dédiées au bien-être"
+    ],
+    correct: 2   // index C
+  },
+  {
+    text: "6. POURQUOI LES MITOCHONDRIES\nOCCUPENT-ELLES UNE PLACE CENTRALE\nDANS LA SCIENCE DE LA LONGÉVITÉ ?",
+    options: [
+      "A. Elles régulent la pigmentation cutanée",
+      "B. Elles produisent l'énergie nécessaire au fonctionnement cellulaire (ATP)",
+      "C. Elles déterminent la densité de la peau"
+    ],
+    correct: 1   // index B
+  }
+];
+
+let currentQ = 0;
+let score = 0;
+let answered = false;
+let questionScreens = [];
+
+function buildQuestions() {
+  const app = document.getElementById('app');
+  QUESTIONS.forEach((q, qi) => {
+    const div = document.createElement('div');
+    div.className = 'screen screen-question';
+    div.id = `screen-q${qi}`;
+    div.innerHTML = `
+      <div class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 586.92 97.89" aria-label="Nescens Switzerland"><g fill="#1B2F6E"><polygon points="152.42 54.54 152.42 46.89 104.03 46.89 104.03 31.42 149.08 31.42 149.08 23.91 96.52 23.91 96.52 54.54 152.42 54.54"/><rect x="96.52" y=".86" width="55.91" height="7.66"/><polygon points="344.02 54.54 344.02 54.54 399.93 54.54 399.93 46.89 351.53 46.89 351.53 31.42 396.58 31.42 396.58 23.91 344.02 23.91 344.02 23.91 344.02 54.54"/><rect x="344.02" y=".86" width="55.91" height="7.66"/><path d="M258.83,27.7c0,14.08,9.99,26.85,36.21,26.84h24.36s0-7.59,0-7.59l-21.33-.06c-19.3,0-29.91-7.29-29.91-19.19s10.68-19.15,29.91-19.15l21.33-.06V.86h-24.53c-25.28,0-36.03,12.08-36.03,26.84Z"/><rect y=".86" width="9.44" height="53.69"/><rect x="61.05" y=".86" width="9.44" height="53.69"/><polygon points="9.44 .86 50.55 54.54 61.05 54.54 19.83 .86 9.44 .86"/><rect x="425.95" y=".86" width="9.44" height="53.69"/><rect x="487" y=".86" width="9.44" height="53.69"/><polygon points="435.39 .86 476.5 54.54 487 54.54 445.79 .86 435.39 .86"/><path d="M180.97,14.48c0-5.97,9.27-7.25,23.45-7.25,8.95,0,20.38,1.13,29.47,4.23l.41-.15V3.37c-8.67-2.87-19.48-3.37-29.6-3.37-20.79,0-31.41,3.44-31.41,14.02,0,7.58,5.95,13.17,23.96,14.92,14.29,1.39,33.33,2.97,33.33,10.26,0,5.74-7.85,8.84-24.3,8.84-12.39,0-23.75-1.89-32.84-5.59l-.41.23v8.54c8.19,2.95,20.59,4.11,32.84,4.11,23.34,0,33.53-4.79,33.53-16.58,0-14.71-21-14.58-37.76-16.65-11.16-1.38-20.67-1.91-20.67-7.61Z"/><path d="M528.49,14.48c0-5.97,9.27-7.25,23.45-7.25,8.95,0,20.38,1.13,29.47,4.23l.41-.15V3.37c-8.67-2.87-19.48-3.37-29.6-3.37-20.79,0-31.41,3.44-31.41,14.02,0,7.58,5.95,13.17,23.96,14.92,14.29,1.39,33.33,2.97,33.33,10.26,0,5.74-7.85,8.84-24.3,8.84-12.39,0-23.75-1.89-32.84-5.59l-.41.23v8.54c8.19,2.95,20.59,4.11,32.84,4.11,23.34,0,33.53-4.79,33.53-16.58,0-14.71-21-14.58-37.76-16.65-11.16-1.38-20.67-1.91-20.67-7.61Z"/><path d="M172.52,85.92h0c-2.13-1.27-4.15-1.27-6.28-1.27h-3.03c-2.18,0-3.2-.67-3.2-2.11,0-2.4,3.76-3.04,5.75-3.04,2.48,0,3.95.65,6.3,2.1l.2.12,1.93-2.76-.19-.14c-2.46-1.86-5.44-2.84-8.63-2.84-1.25,0-2.46.18-3.6.53-2.54.83-5.26,2.86-5.26,6.06,0,3.96,3.4,5.42,6.31,5.47l3.06.06c2.96.05,3.94.1,4.96.75.83.54,1.25,1.25,1.25,2.12,0,2.7-3.82,3.42-6.08,3.42-3.66,0-5.92-.84-8.37-3.11l-.17-.16-2.42,2.33.17.18c2.93,2.98,6.03,4.26,10.38,4.26,4.57,0,9.9-1.75,9.9-6.67,0-2.23-1.09-4.16-2.99-5.3Z"/><polygon points="200.05 91.02 195.94 76.53 192.67 76.53 188.66 91.02 184.25 76.53 180.68 76.53 186.92 97.42 190.52 97.42 194.36 83.63 198.33 97.42 201.76 97.42 208 76.53 204.38 76.53 200.05 91.02"/><rect x="215.58" y="76.53" width="3.42" height="20.89"/><polygon points="227.5 80 234.78 80 234.78 97.42 238.17 97.42 238.17 80 245.36 80 245.36 76.53 227.5 76.53 227.5 80"/><polygon points="269.09 78.83 267.88 76.53 251.93 76.53 251.93 80.02 263.52 80.02 250.84 94.97 250.73 95.09 251.82 97.42 269.21 97.42 269.21 93.9 256.26 93.9 269.09 78.83"/><polygon points="280.59 88.31 287.53 88.31 287.53 84.87 280.59 84.87 280.59 80.02 294.4 80.02 294.4 76.53 277.12 76.53 277.12 97.42 294.92 97.42 294.92 93.95 280.59 93.95 280.59 88.31"/><path d="M322.87,82.79c0-3.8-2.62-6.26-6.67-6.26h-12.33v20.89h3.47v-8.45h7.21l4.1,8.45h3.91l-4.28-8.64c2.97-.82,4.6-2.94,4.6-5.99ZM319.43,82.62c0,2.5-2.02,2.87-3.23,2.87h-8.86v-5.53h8.86c1.47,0,3.23.46,3.23,2.66Z"/><polygon points="335.45 76.53 331.98 76.53 331.98 97.42 347.87 97.42 347.87 93.95 335.45 93.95 335.45 76.53"/><path d="M364.96,76.55h-3.6l-9.5,20.87h3.77l3.03-6.65h8.85l2.93,6.65h3.87l-9.29-20.72-.06-.14ZM365.95,87.28h-5.7l2.85-6.28,2.85,6.28Z"/><polygon points="397.18 91.66 385.34 76.62 385.26 76.53 382 76.53 382 97.42 385.42 97.42 385.42 82.34 397.29 97.33 397.36 97.42 400.68 97.42 400.68 76.53 397.18 76.53 397.18 91.66"/><path d="M421.99,76.53h-10.09v20.89h10.17c2.91,0,4.85-.81,6.69-2.79,1.94-2.06,3.1-4.95,3.1-7.74,0-5.81-4.34-10.36-9.87-10.36ZM428.36,87.11c0,3.9-2.71,6.84-6.29,6.84h-6.76v-13.95h6.7c4.36,0,6.35,3.69,6.35,7.11Z"/></g></svg></div>
+      <p class="q-text">${q.text.replace(/\n/g,'<br>')}</p>
+      <div class="options-list" id="opts-${qi}">
+        ${q.options.map((o, oi) => `
+          <button class="option-btn" onclick="selectAnswer(${qi},${oi})" id="opt-${qi}-${oi}">${o}</button>
+        `).join('')}
+      </div>
+      <div class="feedback" id="fb-${qi}"></div>
+      <button class="next-btn" id="next-${qi}" onclick="nextQuestion(${qi})">${qi < QUESTIONS.length-1 ? 'Question suivante →' : 'Voir les résultats →'}</button>
+      <div class="progress-bar"><div class="progress-fill" id="prog-${qi}" style="width:${((qi+1)/QUESTIONS.length*100)}%"></div></div>
+    `;
+    // insert before result screen
+    app.insertBefore(div, document.getElementById('screen-result'));
+    questionScreens.push(div);
+  });
+}
+
+function goToScreen(id) {
+  const current = document.querySelector('.screen.active');
+  const next = document.getElementById(id);
+  if (!next) return;
+  if (current) {
+    current.classList.remove('active');
+    current.classList.add('exit-left');
+    setTimeout(() => current.classList.remove('exit-left'), 600);
+  }
+  setTimeout(() => {
+    next.classList.add('active');
+  }, 80);
+}
+
+function startQuiz() {
+  currentQ = 0;
+  score = 0;
+  answered = false;
+  goToScreen('screen-q0');
+}
+
+function selectAnswer(qi, oi) {
+  if (answered) return;
+  answered = true;
+  const q = QUESTIONS[qi];
+  const opts = document.querySelectorAll(`#opts-${qi} .option-btn`);
+  const fb = document.getElementById(`fb-${qi}`);
+  const nextBtn = document.getElementById(`next-${qi}`);
+
+  opts.forEach(b => b.setAttribute('disabled', true));
+
+  if (oi === q.correct) {
+    // Correct
+    score++;
+    opts[oi].classList.add('selected-correct', 'pulse-correct');
+    opts.forEach((b, i) => { if (i !== oi) b.classList.add('faded'); });
+    fb.textContent = '✓ Bonne réponse !';
+    fb.className = 'feedback show correct';
+  } else {
+    // Wrong
+    opts[oi].classList.add('selected-wrong');
+    opts[oi].classList.add('shake');
+    opts[q.correct].classList.add('reveal-correct');
+    opts.forEach((b, i) => { if (i !== oi && i !== q.correct) b.classList.add('faded'); });
+    fb.textContent = '✗ Mauvaise réponse';
+    fb.className = 'feedback show wrong';
+  }
+
+  nextBtn.classList.add('visible');
+}
+
+function nextQuestion(qi) {
+  answered = false;
+  if (qi < QUESTIONS.length - 1) {
+    goToScreen(`screen-q${qi+1}`);
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  const total = QUESTIONS.length;
+  const titleEl = document.getElementById('result-title');
+  const scoreEl = document.getElementById('result-score');
+  const msgEl = document.getElementById('result-msg');
+  const starsEl = document.getElementById('stars-container');
+
+  starsEl.innerHTML = '';
+  if (score === total) {
+    for (let i = 0; i < total; i++) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.classList.add('star');
+      svg.innerHTML = `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>`;
+      starsEl.appendChild(svg);
+      setTimeout(() => svg.classList.add('lit'), 300 + i * 120);
+    }
+  }
+
+  if (score === total) {
+    titleEl.textContent = 'FÉLICITATIONS.';
+    scoreEl.textContent = `${score} / ${total} bonnes réponses`;
+    msgEl.innerHTML = `Vous maîtrisez parfaitement la science de la longévité Nescens.<br><br>Vous remportez notre nouveau <strong>Skin Energy Serum</strong> en édition limitée.`;
+  } else {
+    titleEl.textContent = 'DOMMAGE.';
+    scoreEl.textContent = `${score} / ${total} bonnes réponses`;
+    msgEl.innerHTML = `Il faut répondre correctement aux <strong>6 questions</strong> pour être qualifié(e).<br><br>Plongez dans l'univers de la science Nescens sur <strong>nescens.com</strong>.`;
+  }
+
+  goToScreen('screen-result');
+}
+
+function restartQuiz() {
+  // Reset all question screens
+  QUESTIONS.forEach((q, qi) => {
+    const opts = document.querySelectorAll(`#opts-${qi} .option-btn`);
+    opts.forEach(b => {
+      b.className = 'option-btn';
+      b.removeAttribute('disabled');
+    });
+    const fb = document.getElementById(`fb-${qi}`);
+    fb.className = 'feedback';
+    fb.textContent = '';
+    document.getElementById(`next-${qi}`).classList.remove('visible');
+  });
+  currentQ = 0; score = 0; answered = false;
+  goToScreen('screen-intro');
+}
+
+buildQuestions();
+</script>
+</body>
+</html>
